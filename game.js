@@ -12,6 +12,12 @@ window.addEventListener("resize", dopasujCanvas);
 
 const inniGracze = {};
 
+// Obiekt kamery śledzącej gracza
+const kamera = {
+    x: 0,
+    y: 0
+};
+
 // Konsola debugowania na ekranie
 const debugBox = document.createElement("div");
 debugBox.style.position = "fixed";
@@ -28,7 +34,7 @@ debugBox.style.borderRadius = "5px";
 debugBox.style.zIndex = "99999";
 debugBox.style.overflowY = "auto";
 debugBox.style.pointerEvents = "none";
-debugBox.innerHTML = "<b>[SYSTEM]</b> Inicjalizacja sieci...<br>";
+debugBox.innerHTML = "<b>[SYSTEM]</b> Inicjalizacja kamery i sieci...<br>";
 document.body.appendChild(debugBox);
 
 function logDoKonsoli(wiadomosc) {
@@ -45,10 +51,6 @@ socket.on("connect_error", (err) => {
     logDoKonsoli(`<span style="color:red;">Błąd połączenia: ${err.message}</span>`);
 });
 
-socket.on("disconnect", (reason) => {
-    logDoKonsoli(`<span style="color:yellow;">Rozłączono: ${reason}</span>`);
-});
-
 document.getElementById("btnZaloguj").addEventListener("click", () => {
     const nick = document.getElementById("inputLogin").value.trim();
     
@@ -61,8 +63,8 @@ document.getElementById("btnZaloguj").addEventListener("click", () => {
             gracz.nick = nick;
         }
 
-        const posX = typeof gracz !== 'undefined' ? gracz.x : 100;
-        const posY = typeof gracz !== 'undefined' ? gracz.y : 100;
+        const posX = typeof gracz !== 'undefined' ? gracz.x : 1500;
+        const posY = typeof gracz !== 'undefined' ? gracz.y : 1500;
         
         logDoKonsoli(`Wysyłam joinGame: ${nick} (${Math.round(posX)}, ${Math.round(posY)})`);
         socket.emit("joinGame", { nick: nick, x: posX, y: posY });
@@ -112,6 +114,31 @@ function wyslijRuch() {
     }
 }
 
+// Rysowanie siatki terenu, żeby widać było ruch kamery
+function rysujSiatkeTla(ctx) {
+    ctx.strokeStyle = "#1e293b";
+    ctx.lineWidth = 1;
+    const rozmiarSiatki = 100;
+    
+    const startX = Math.floor(kamera.x / rozmiarSiatki) * rozmiarSiatki;
+    const endX = startX + canvas.width + rozmiarSiatki * 2;
+    const startY = Math.floor(kamera.y / rozmiarSiatki) * rozmiarSiatki;
+    const endY = startY + canvas.height + rozmiarSiatki * 2;
+
+    for (let x = startX; x < endX; x += rozmiarSiatki) {
+        ctx.beginPath();
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, endY);
+        ctx.stroke();
+    }
+    for (let y = startY; y < endY; y += rozmiarSiatki) {
+        ctx.beginPath();
+        ctx.moveTo(startX, y);
+        ctx.lineTo(endX, y);
+        ctx.stroke();
+    }
+}
+
 function rysujInnychGraczy(ctx) {
     Object.keys(inniGracze).forEach((id) => {
         const g = inniGracze[id];
@@ -142,18 +169,20 @@ function rysujInnychGraczy(ctx) {
         ctx.roundRect(-12, -48, 24, 22, 4);
         ctx.fill();
 
-        ctx.restore();
-
+        // Nick innego gracza
         ctx.fillStyle = "white";
         ctx.font = "12px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(g.nick || "Druh", g.x, g.y - 65);
+        ctx.fillText(g.nick || "Druh", 0, -55);
+
+        ctx.restore();
     });
 }
 
 let licznikRuchu = 0;
 
 function petlaGry() {
+    // Czyszczenie ekranu
     ctx.fillStyle = "#0f172a";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -161,12 +190,27 @@ function petlaGry() {
         if (typeof gracz.aktualizuj === 'function') {
             gracz.aktualizuj();
         }
+        // Kamera śledzi gracza (ustawia go na środku ekranu)
+        kamera.x = gracz.x - canvas.width / 2;
+        kamera.y = gracz.y - canvas.height / 2;
+    }
+
+    // === ROZPOCZĘCIE RYSOWANIA ŚWIATA ZA KAMERĄ ===
+    ctx.save();
+    ctx.translate(-kamera.x, -kamera.y);
+
+    rysujSiatkeTla(ctx);
+
+    if (typeof gracz !== 'undefined') {
         if (typeof gracz.rysuj === 'function') {
             gracz.rysuj(ctx);
         }
     }
 
     rysujInnychGraczy(ctx);
+
+    ctx.restore();
+    // === KONIEC RYSOWANIA ŚWIATA ===
 
     licznikRuchu++;
     if (licznikRuchu % 3 === 0) {

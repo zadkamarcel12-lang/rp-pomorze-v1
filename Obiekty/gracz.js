@@ -1,7 +1,7 @@
 class Gracz {
     constructor() {
-        this.x = window.innerWidth / 2;
-        this.y = window.innerHeight / 2;
+        this.x = 1500; // Start na środku dużej mapy (np. 3000x3000px)
+        this.y = 1500;
 
         this.predkosc = 3.5;
         this.klawisze = {};
@@ -18,7 +18,7 @@ class Gracz {
         this.ubranyWNomex = false;
         this.stopien = "st_strazak";
         this.zalogowany = false;
-        this.nick = ""; // Dodany nick
+        this.nick = "";
 
         this.sprawdzSesje();
     }
@@ -59,8 +59,8 @@ class Gracz {
 
     wczytajDane(dane) {
         if (dane) {
-            this.x = dane.x || window.innerWidth / 2;
-            this.y = dane.y || window.innerHeight / 2;
+            this.x = dane.x || 1500;
+            this.y = dane.y || 1500;
             this.ubranyWNomex = dane.ubranyWNomex || false;
             if (dane.stopien) this.stopien = dane.stopien;
         }
@@ -93,7 +93,7 @@ class Gracz {
         }, { passive: true });
     }
 
-    aktualizuj(canvas) {
+    aktualizuj() {
         let dx = 0;
         let dy = 0;
 
@@ -112,6 +112,10 @@ class Gracz {
         this.x += dx * this.predkosc;
         this.y += dy * this.predkosc;
 
+        // Granice świata gry (np. mapa 3000x3000 pikseli)
+        this.x = Math.max(50, Math.min(3000, this.x));
+        this.y = Math.max(50, Math.min(3000, this.y));
+
         if (this.chodzi) {
             this.czasAnimacji += 0.22;
             if (this.czasAnimacji > Math.PI * 2) this.czasAnimacji = 0;
@@ -124,11 +128,6 @@ class Gracz {
             }
         } else {
             this.animacja *= 0.8;
-        }
-
-        if (canvas) {
-            this.x = Math.max(50, Math.min(canvas.width - 50, this.x));
-            this.y = Math.max(90, Math.min(canvas.height - 80, this.y));
         }
     }
 
@@ -145,17 +144,13 @@ class Gracz {
             this.rysujPrzod(ctx);
         }
 
-        ctx.restore();
-
-        // Rysowanie nicku nad własną postacią
+        // Nick nad własną postacią (wewnątrz translacji gracza)
         ctx.fillStyle = "white";
         ctx.font = "12px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(this.nick || "Druh", this.x, this.y - (65 * this.skala));
+        ctx.fillText(this.nick || "Druh", 0, -55);
 
-        if (typeof rysujInnychGraczy === "function") {
-            rysujInnychGraczy(ctx);
-        }
+        ctx.restore();
     }
 
     rysujCien(ctx) {
@@ -471,6 +466,5 @@ class Gracz {
     }
 }
 
-// === TWORZENIE INSTANCJI I URUCHOMIENIE STEROWANIA ===
 const gracz = new Gracz();
 gracz.inicjalizujSterowanie();
