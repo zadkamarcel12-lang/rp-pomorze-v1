@@ -151,3 +151,4 @@ function rysujInnychGraczy(ctx) {
         ctx.fillText(g.nick || "Druh", g.x, g.y - 65);
     });
 }
+     
