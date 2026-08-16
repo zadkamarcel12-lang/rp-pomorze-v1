@@ -1,6 +1,17 @@
 // Podmień na swój adres z Rendera!
 const socket = io("https://rp-pomorze-serwer.onrender.com");
 
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// Automatyczne dopasowanie canvasu do okna przeglądarki
+function dopasujCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+dopasujCanvas();
+window.addEventListener("resize", dopasujCanvas);
+
 const inniGracze = {};
 
 // === TWORZENIE WŁASNEJ KONSOLI NA EKRANIE ===
@@ -65,7 +76,6 @@ document.getElementById("btnZaloguj").addEventListener("click", () => {
 });
 
 // === NASŁUCHIWANIE ZDARZEŃ SIECIOWYCH ===
-
 socket.on("currentPlayers", (players) => {
     logDoKonsoli(`Otrzymano currentPlayers: ${Object.keys(players).length} graczy`);
     Object.keys(players).forEach((id) => {
@@ -151,4 +161,36 @@ function rysujInnychGraczy(ctx) {
         ctx.fillText(g.nick || "Druh", g.x, g.y - 65);
     });
 }
-     
+
+// === GŁÓWNA PĘTLA GRY (ODŚWIEŻANIE EKRANU) ===
+let licznikRuchu = 0;
+
+function petlaGry() {
+    // 1. Czyszczenie ekranu
+    ctx.fillStyle = "#0f172a";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 2. Aktualizacja i rysowanie Twojej postaci (z pliku gracz.js)
+    if (typeof gracz !== 'undefined') {
+        if (typeof gracz.aktualizuj === 'function') {
+            gracz.aktualizuj();
+        }
+        if (typeof gracz.rysuj === 'function') {
+            gracz.rysuj(ctx);
+        }
+    }
+
+    // 3. Rysowanie innych graczy
+    rysujInnychGraczy(ctx);
+
+    // 4. Wysyłanie ruchu co kilka klatek
+    licznikRuchu++;
+    if (licznikRuchu % 3 === 0) {
+        wyslijRuch();
+    }
+
+    requestAnimationFrame(petlaGry);
+}
+
+// Uruchomienie pętli
+requestAnimationFrame(petlaGry);
