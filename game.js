@@ -13,7 +13,7 @@ document.getElementById("btnZaloguj").addEventListener("click", () => {
         document.getElementById("uiGry").classList.remove("ukryty");
         document.getElementById("nazwaZalogowanego").innerText = nick;
 
-        // Przypisujemy nick do obiektu gracza (zakładając, że obiekt 'gracz' jest zdefiniowany w gracz.js)
+        // Przypisujemy nick do obiektu gracza
         if (typeof gracz !== 'undefined') {
             gracz.nick = nick;
         }
@@ -45,6 +45,9 @@ socket.on("playerMoved", (playerInfo) => {
     if (inniGracze[playerInfo.id]) {
         inniGracze[playerInfo.id].x = playerInfo.x;
         inniGracze[playerInfo.id].y = playerInfo.y;
+        inniGracze[playerInfo.id].kierunek = playerInfo.kierunek;
+        inniGracze[playerInfo.id].ubranyWNomex = playerInfo.ubranyWNomex;
+        inniGracze[playerInfo.id].stopien = playerInfo.stopien;
     }
 });
 
@@ -53,27 +56,58 @@ socket.on("playerDisconnected", (id) => {
 });
 
 // === FUNKCJA WYSYŁAJĄCA RUCH ===
-// Wywołuj tę funkcję w swojej pętli gry, gdy gracz się porusza:
 function wyslijRuch() {
     if (typeof gracz !== 'undefined' && socket.connected) {
-        socket.emit("playerMovement", { x: gracz.x, y: gracz.y });
+        socket.emit("playerMovement", { 
+            x: gracz.x, 
+            y: gracz.y,
+            kierunek: gracz.kierunek,
+            ubranyWNomex: gracz.ubranyWNomex,
+            stopien: gracz.stopien
+        });
     }
 }
 
 // === FUNKCJA RYSUJĄCA INNYCH GRACZY ===
-// Wywołuj tę funkcję w swojej głównej funkcji rysującej (np. w pętli renderowania na canvasie):
 function rysujInnychGraczy(ctx) {
     Object.keys(inniGracze).forEach((id) => {
         const g = inniGracze[id];
         
-        // Rysowanie kwadratu/postaci drugiego gracza
-        ctx.fillStyle = "red";
-        ctx.fillRect(g.x, g.y, 32, 32);
+        ctx.save();
+        ctx.translate(g.x, g.y);
+        ctx.scale(1.3, 1.3);
+
+        // Cień
+        ctx.fillStyle = "rgba(0,0,0,0.35)";
+        ctx.beginPath();
+        ctx.ellipse(0, 50, 24, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Uproszczone rysowanie drugiego gracza (lub pełne, zależnie od potrzeb)
+        if (g.ubranyWNomex) {
+            ctx.fillStyle = "#c8ab84";
+            ctx.beginPath();
+            ctx.roundRect(-18, -28, 36, 42, 4);
+            ctx.fill();
+        } else {
+            ctx.fillStyle = "#3182ce";
+            ctx.beginPath();
+            ctx.roundRect(-16, -28, 32, 40, 4);
+            ctx.fill();
+        }
+
+        // Głowa
+        ctx.fillStyle = "#d89b6b";
+        ctx.beginPath();
+        ctx.roundRect(-12, -48, 24, 22, 4);
+        ctx.fill();
+
+        ctx.restore();
 
         // Rysowanie nicku nad postacią
         ctx.fillStyle = "white";
         ctx.font = "12px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(g.nick || "Druh", g.x + 16, g.y - 6);
+        ctx.fillText(g.nick || "Druh", g.x, g.y - 65);
     });
 }

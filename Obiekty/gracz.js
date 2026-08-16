@@ -19,7 +19,6 @@ class Gracz {
         this.stopien = "st_strazak";
         this.zalogowany = false;
 
-        // Automatyczne sprawdzanie i wczytywanie sesji logowania
         this.sprawdzSesje();
     }
 
@@ -112,13 +111,21 @@ class Gracz {
         this.x += dx * this.predkosc;
         this.y += dy * this.predkosc;
 
+        if (this.chodz) {
+            // Ruch
+        }
+
         if (this.chodzi) {
             this.czasAnimacji += 0.22;
             if (this.czasAnimacji > Math.PI * 2) this.czasAnimacji = 0;
             this.animacja = Math.sin(this.czasAnimacji);
             
-            // Zapis pozycji w localStorage po ruchu
             this.zapiszSesje();
+
+            // Automatyczne wysyłanie pozycji do serwera podczas ruchu
+            if (typeof wyslijRuch === "function") {
+                wyslijRuch();
+            }
         } else {
             this.animacja *= 0.8;
         }
@@ -143,6 +150,11 @@ class Gracz {
         }
 
         ctx.restore();
+
+        // Rysowanie innych graczy podpiętych do serwera
+        if (typeof rysujInnychGraczy === "function") {
+            rysujInnychGraczy(ctx);
+        }
     }
 
     rysujCien(ctx) {
@@ -235,17 +247,14 @@ class Gracz {
         this.rysujPrawaNoga(ctx, this.chodzi);
 
         if (this.ubranyWNomex) {
-            // Kołnierz ochronny / Szyja
             ctx.fillStyle = "#22252a";
             ctx.fillRect(-10, -32, 20, 8);
 
-            // Tułów
             ctx.fillStyle = "#c8ab84";
             ctx.beginPath();
             ctx.roundRect(-18, -28, 36, 42, 4);
             ctx.fill();
 
-            // Zamek i pasy
             ctx.fillStyle = "#222222";
             ctx.fillRect(-1.5, -28, 3, 42);
 
@@ -259,7 +268,6 @@ class Gracz {
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(-18, 7, 36, 2);
 
-            // Rzepy / Napisy
             ctx.fillStyle = "#ccff00";
             ctx.fillRect(-15, -22, 11, 5);
             ctx.strokeStyle = "#111111";
@@ -273,7 +281,6 @@ class Gracz {
 
             this.rysujDystynkcje(ctx, -14.5, -15.5);
 
-            // Latarka / Radio
             ctx.fillStyle = "#111111";
             ctx.fillRect(7, -22, 5, 11);
             ctx.fillStyle = "#d8a600";
@@ -292,7 +299,6 @@ class Gracz {
             ctx.fillStyle = "#ccff00";
             ctx.fillRect(-15, 16, 6, 2);
 
-            // Ręce z przodu
             ctx.fillStyle = "#c8ab84";
             ctx.fillRect(-25, -26, 6, 20);
             ctx.fillStyle = "#282d35";
@@ -321,18 +327,15 @@ class Gracz {
             ctx.fillRect(16, -4, 6, 6);
         }
 
-        // Głowa (skóra)
         ctx.fillStyle = "#d89b6b";
         ctx.beginPath();
         ctx.roundRect(-12, -48, 24, 22, 4);
         ctx.fill();
 
-        // Oczy
         ctx.fillStyle = "#1a1a1a";
         ctx.fillRect(-6, -37, 3.5, 3.5);
         ctx.fillRect(2.5, -37, 3.5, 3.5);
 
-        // Ubiór głowy
         if (this.ubranyWNomex) {
             this.rysujHelmPrzod(ctx);
         } else {
@@ -377,11 +380,9 @@ class Gracz {
         this.rysujPrawaNoga(ctx, this.chodzi);
 
         if (this.ubranyWNomex) {
-            // Kołnierz / Kominiarka z tyłu
             ctx.fillStyle = "#22252a";
             ctx.fillRect(-13, -36, 26, 12);
 
-            // Tułów
             ctx.fillStyle = "#c8ab84";
             ctx.beginPath();
             ctx.roundRect(-18, -28, 36, 42, 4);
@@ -400,7 +401,6 @@ class Gracz {
             ctx.fillText("PAŃSTWOWA", 0, -11);
             ctx.fillText("STRAŻ POŻARNA", 0, -7);
 
-            // Ręce z tyłu
             ctx.fillStyle = "#c8ab84";
             ctx.fillRect(-25, -26, 6, 20);
             ctx.fillStyle = "#282d35";
@@ -415,7 +415,6 @@ class Gracz {
             ctx.fillStyle = "#111111";
             ctx.fillRect(19, -5, 7, 9);
 
-            // Głowa
             ctx.fillStyle = "#d89b6b";
             ctx.beginPath();
             ctx.roundRect(-12, -48, 24, 22, 4);
