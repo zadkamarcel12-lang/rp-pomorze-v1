@@ -15,6 +15,12 @@ body, html {
 
 #gameCanvas {
     display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* Pod panelem logowania i UI */
 }
 
 .ukryty {
