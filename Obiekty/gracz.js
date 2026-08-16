@@ -18,6 +18,7 @@ class Gracz {
         this.ubranyWNomex = false;
         this.stopien = "st_strazak";
         this.zalogowany = false;
+        this.nick = ""; // Dodany nick
 
         this.sprawdzSesje();
     }
@@ -96,10 +97,10 @@ class Gracz {
         let dx = 0;
         let dy = 0;
 
-        if (this.klawisze["w"]) { dy -= 1; this.kierunek = "gora"; }
-        if (this.klawisze["s"]) { dy += 1; this.kierunek = "dol"; }
-        if (this.klawisze["a"]) { dx -= 1; this.kierunek = "lewo"; }
-        if (this.klawisze["d"]) { dx += 1; this.kierunek = "prawo"; }
+        if (this.klawisze["w"] || this.klawisze["arrowup"]) { dy -= 1; this.kierunek = "gora"; }
+        if (this.klawisze["s"] || this.klawisze["arrowdown"]) { dy += 1; this.kierunek = "dol"; }
+        if (this.klawisze["a"] || this.klawisze["arrowleft"]) { dx -= 1; this.kierunek = "lewo"; }
+        if (this.klawisze["d"] || this.klawisze["arrowright"]) { dx += 1; this.kierunek = "prawo"; }
 
         this.chodzi = dx !== 0 || dy !== 0;
 
@@ -145,6 +146,12 @@ class Gracz {
         }
 
         ctx.restore();
+
+        // Rysowanie nicku nad własną postacią
+        ctx.fillStyle = "white";
+        ctx.font = "12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(this.nick || "Druh", this.x, this.y - (65 * this.skala));
 
         if (typeof rysujInnychGraczy === "function") {
             rysujInnychGraczy(ctx);
@@ -463,3 +470,7 @@ class Gracz {
         ctx.fillRect(-19, -51, 38, 4);
     }
 }
+
+// === TWORZENIE INSTANCJI I URUCHOMIENIE STEROWANIA ===
+const gracz = new Gracz();
+gracz.inicjalizujSterowanie();
