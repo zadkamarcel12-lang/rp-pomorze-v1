@@ -111,10 +111,6 @@ class Gracz {
         this.x += dx * this.predkosc;
         this.y += dy * this.predkosc;
 
-        if (this.chodz) {
-            // Ruch
-        }
-
         if (this.chodzi) {
             this.czasAnimacji += 0.22;
             if (this.czasAnimacji > Math.PI * 2) this.czasAnimacji = 0;
@@ -122,7 +118,6 @@ class Gracz {
             
             this.zapiszSesje();
 
-            // Automatyczne wysyłanie pozycji do serwera podczas ruchu
             if (typeof wyslijRuch === "function") {
                 wyslijRuch();
             }
@@ -151,7 +146,6 @@ class Gracz {
 
         ctx.restore();
 
-        // Rysowanie innych graczy podpiętych do serwera
         if (typeof rysujInnychGraczy === "function") {
             rysujInnychGraczy(ctx);
         }

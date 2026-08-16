@@ -3,24 +3,61 @@ const socket = io("https://rp-pomorze-serwer.onrender.com");
 
 const inniGracze = {};
 
+// === TWORZENIE WŁASNEJ KONSOLI NA EKRANIE ===
+const debugBox = document.createElement("div");
+debugBox.style.position = "fixed";
+debugBox.style.bottom = "10px";
+debugBox.style.left = "10px";
+debugBox.style.width = "320px";
+debugBox.style.height = "120px";
+debugBox.style.background = "rgba(0, 0, 0, 0.85)";
+debugBox.style.color = "#00ff00";
+debugBox.style.fontFamily = "monospace";
+debugBox.style.fontSize = "11px";
+debugBox.style.padding = "8px";
+debugBox.style.borderRadius = "5px";
+debugBox.style.zIndex = "99999";
+debugBox.style.overflowY = "auto";
+debugBox.style.pointerEvents = "none";
+debugBox.innerHTML = "<b>[SYSTEM]</b> Inicjalizacja sieci...<br>";
+document.body.appendChild(debugBox);
+
+function logDoKonsoli(wiadomosc) {
+    const czas = new Date().toLocaleTimeString();
+    debugBox.innerHTML += `[${czas}] ${wiadomosc}<br>`;
+    debugBox.scrollTop = debugBox.scrollHeight;
+}
+
+// === DIAGNOSTYKA SOCKET.IO ===
+socket.on("connect", () => {
+    logDoKonsoli(`Połączono z serwerem! ID: ${socket.id}`);
+});
+
+socket.on("connect_error", (err) => {
+    logDoKonsoli(`<span style="color:red;">Błąd połączenia: ${err.message}</span>`);
+});
+
+socket.on("disconnect", (reason) => {
+    logDoKonsoli(`<span style="color:yellow;">Rozłączono: ${reason}</span>`);
+});
+
 // Obsługa przycisku logowania
 document.getElementById("btnZaloguj").addEventListener("click", () => {
     const nick = document.getElementById("inputLogin").value.trim();
     
     if (nick.length > 0) {
-        // Ukrywamy panel logowania, pokazujemy UI gry
         document.getElementById("ekranLogowania").classList.add("ukryty");
         document.getElementById("uiGry").classList.remove("ukryty");
         document.getElementById("nazwaZalogowanego").innerText = nick;
 
-        // Przypisujemy nick do obiektu gracza
         if (typeof gracz !== 'undefined') {
             gracz.nick = nick;
         }
 
-        // Informujemy serwer o dołączeniu do gry
         const posX = typeof gracz !== 'undefined' ? gracz.x : 100;
         const posY = typeof gracz !== 'undefined' ? gracz.y : 100;
+        
+        logDoKonsoli(`Wysyłam joinGame: ${nick} (${Math.round(posX)}, ${Math.round(posY)})`);
         socket.emit("joinGame", { nick: nick, x: posX, y: posY });
     } else {
         alert("Wpisz nazwę gracza!");
@@ -30,6 +67,7 @@ document.getElementById("btnZaloguj").addEventListener("click", () => {
 // === NASŁUCHIWANIE ZDARZEŃ SIECIOWYCH ===
 
 socket.on("currentPlayers", (players) => {
+    logDoKonsoli(`Otrzymano currentPlayers: ${Object.keys(players).length} graczy`);
     Object.keys(players).forEach((id) => {
         if (id !== socket.id) {
             inniGracze[id] = players[id];
@@ -38,6 +76,7 @@ socket.on("currentPlayers", (players) => {
 });
 
 socket.on("newPlayer", (playerInfo) => {
+    logDoKonsoli(`Nowy gracz dołączył: ${playerInfo.nick} (${playerInfo.id})`);
     inniGracze[playerInfo.id] = playerInfo;
 });
 
@@ -52,6 +91,7 @@ socket.on("playerMoved", (playerInfo) => {
 });
 
 socket.on("playerDisconnected", (id) => {
+    logDoKonsoli(`Gracz wyszedł: ${id}`);
     delete inniGracze[id];
 });
 
@@ -83,7 +123,7 @@ function rysujInnychGraczy(ctx) {
         ctx.ellipse(0, 50, 24, 8, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Uproszczone rysowanie drugiego gracza (lub pełne, zależnie od potrzeb)
+        // Ubiór drugiego gracza
         if (g.ubranyWNomex) {
             ctx.fillStyle = "#c8ab84";
             ctx.beginPath();
