@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RP Pomorze</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Panel logowania i rejestracji -->
+    <div id="ekranLogowania" class="ekran-auth">
+        <div class="okno-auth">
+            <h2>RP POMORZE - LOGOWANIE</h2>
+            <div id="komunikatAuth" class="komunikat"></div>
+            
+            <input type="text" id="inputLogin" placeholder="Nazwa gracza / Druh" maxlength="15">
+            <input type="password" id="inputHaslo" placeholder="Hasło">
+
+            <div class="przyciski-auth">
+                <button id="btnZaloguj">Zaloguj się</button>
+                <button id="btnZarejestruj">Zarejestruj konto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI w grze (po zalogowaniu) -->
+    <div id="uiGry" class="ukryty">
+        <div id="panelGracza">
+            Zalogowany jako: <b id="nazwaZalogowanego">-</b>
+            <button id="btnZapisz">Zapisz grę</button>
+            <button id="btnWyloguj">Wyloguj</button>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="bazaDanych.js"></script>
+    <script src="Obiekty/szafka.js"></script>
+    <script src="Obiekty/gracz.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
