@@ -1,103 +1,74 @@
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+// Połączenie z serwerem (podmień na adres swojego serwera, np. na Render.com)
+const socket = io("http://localhost:3000");
 
-function dopasujEkran() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+const inniGracze = {};
+
+// Obsługa przycisku zaloguj
+document.getElementById("btnZaloguj").addEventListener("click", () => {
+    const nick = document.getElementById("inputLogin").value.trim();
+    
+    if (nick.length > 0) {
+        // Ukrywamy panel logowania, pokazujemy UI gry
+        document.getElementById("ekranLogowania").classList.add("ukryty");
+        document.getElementById("uiGry").classList.remove("ukryty");
+        document.getElementById("nazwaZalogowanego").innerText = nick;
+
+        // Powiadamiamy serwer o zalogowaniu gracza
+        socket.emit("doluaczDoGry", { nick: nick, x: gracz.x, y: gracz.y });
+    }
+});
+
+// === NASŁUCHIWANIE INNYCH GRACZY ===
+
+// Odbieramy listę obecnych graczy
+socket.on("aktualniGracze", (gracze) => {
+    Object.keys(gracze).forEach((id) => {
+        if (id !== socket.id) {
+            inniGracze[id] = gracze[id];
+        }
+    });
+});
+
+// Nowy gracz dołącza
+socket.on("nowyGracz", (daneGracza) => {
+    inniGracze[daneGracza.id] = daneGracza;
+});
+
+// Inny gracz się poruszył
+socket.on("graczSiePoruszyl", (daneGracza) => {
+    if (inniGracze[daneGracza.id]) {
+        inniGracze[daneGracza.id].x = daneGracza.x;
+        inniGracze[daneGracza.id].y = daneGracza.y;
+    }
+});
+
+// Gracz wyszedł z gry
+socket.on("graczOdlaczony", (id) => {
+    delete inniGracze[id];
+});
+
+// === WYSYŁANIE RUCHU ===
+// W swojej pętli gry (tam gdzie zmieniasz gracz.x i gracz.y po wciśnięciu klawiszy):
+function obslugaRuchu() {
+    // np. gracz.x += predkosc;
+    
+    // Po zmianie pozycji wysyłamy ją na serwer:
+    socket.emit("ruchGracza", { x: gracz.x, y: gracz.y });
 }
-window.addEventListener("resize", dopasujEkran);
-dopasujEkran();
 
-window.szafka = new SzafkaOSP(300, 300);
-const gracz = new Gracz();
-
-let graAktywna = false;
-let zalogowanyUzytkownik = null;
-
-// Inicjalizacja bazy i podpięcie interfejsu
-window.baza.otworzBaze().then(() => {
-    console.log("Baza danych gotowa.");
-});
-
-// Elementy UI
-const ekranLogowania = document.getElementById("ekranLogowania");
-const uiGry = document.getElementById("uiGry");
-const komunikatAuth = document.getElementById("komunikatAuth");
-const inputLogin = document.getElementById("inputLogin");
-const inputHaslo = document.getElementById("inputHaslo");
-const nazwaZalogowanego = document.getElementById("nazwaZalogowanego");
-
-document.getElementById("btnZarejestruj").addEventListener("click", async () => {
-    const login = inputLogin.value.trim();
-    const haslo = inputHaslo.value.trim();
-
-    if (!login || !haslo) {
-        pokazKomunikat("Wpisz login i hasło!", "blad");
-        return;
-    }
-
-    const res = await window.baza.zarejestruj(login, haslo);
-    pokazKomunikat(res.wiadomosc, res.sukces ? "sukces" : "blad");
-});
-
-document.getElementById("btnZaloguj").addEventListener("click", async () => {
-    const login = inputLogin.value.trim();
-    const haslo = inputHaslo.value.trim();
-
-    if (!login || !haslo) {
-        pokazKomunikat("Wpisz login i hasło!", "blad");
-        return;
-    }
-
-    const res = await window.baza.zaloguj(login, haslo);
-    if (res.sukces) {
-        zalogowanyUzytkownik = res.dane.login;
-        gracz.wczytajDane(res.dane);
+// === RYSOWANIE INNYCH GRACZY NA CANVAS ===
+function rysujInnychGraczy(ctx) {
+    Object.keys(inniGracze).forEach((id) => {
+        const g = inniGracze[id];
         
-        nazwaZalogowanego.innerText = zalogowanyUzytkownik;
-        ekranLogowania.classList.add("ukryty");
-        uiGry.classList.remove("ukryty");
-        graAktywna = true;
-    } else {
-        pokazKomunikat(res.wiadomosc, "blad");
-    }
-});
+        // Rysujemy postać drugiego gracza
+        ctx.fillStyle = "red";
+        ctx.fillRect(g.x, g.y, 32, 32);
 
-document.getElementById("btnZapisz").addEventListener("click", async () => {
-    if (zalogowanyUzytkownik) {
-        await window.baza.zapiszStan(zalogowanyUzytkownik, gracz.x, gracz.y, gracz.ubranyWNomex);
-        alert("Stan gry został zapisany!");
-    }
-});
-
-document.getElementById("btnWyloguj").addEventListener("click", () => {
-    graAktywna = false;
-    zalogowanyUzytkownik = null;
-    uiGry.classList.add("ukryty");
-    ekranLogowania.classList.remove("ukryty");
-    inputHaslo.value = "";
-});
-
-function pokazKomunikat(tekst, typ) {
-    komunikatAuth.innerText = tekst;
-    komunikatAuth.className = "komunikat " + typ;
+        // Rysujemy nick nad postacią
+        ctx.fillStyle = "white";
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(g.nick || "Druh", g.x + 16, g.y - 6);
+    });
 }
-
-gracz.inicjalizujSterowanie([window.szafka]);
-
-function petlaGry() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = "#1e293b";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    if (graAktywna) {
-        window.szafka.rysuj(ctx, gracz);
-        gracz.aktualizuj(canvas);
-        gracz.rysuj(ctx);
-    }
-
-    requestAnimationFrame(petlaGry);
-}
-
-petlaGry();
