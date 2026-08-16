@@ -1,5 +1,5 @@
 // Połączenie z serwerem (podmień na adres swojego serwera, np. na Render.com)
-const socket = io("http://localhost:3000");
+const socket = io("https://rp-pomorze-serwer.onrender.com");
 
 const inniGracze = {};
 
