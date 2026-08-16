@@ -1,10 +1,8 @@
-// Podmień na swój adres z Rendera!
 const socket = io("https://rp-pomorze-serwer.onrender.com");
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Automatyczne dopasowanie canvasu do okna przeglądarki
 function dopasujCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -14,7 +12,7 @@ window.addEventListener("resize", dopasujCanvas);
 
 const inniGracze = {};
 
-// === TWORZENIE WŁASNEJ KONSOLI NA EKRANIE ===
+// Konsola debugowania na ekranie
 const debugBox = document.createElement("div");
 debugBox.style.position = "fixed";
 debugBox.style.bottom = "10px";
@@ -39,7 +37,6 @@ function logDoKonsoli(wiadomosc) {
     debugBox.scrollTop = debugBox.scrollHeight;
 }
 
-// === DIAGNOSTYKA SOCKET.IO ===
 socket.on("connect", () => {
     logDoKonsoli(`Połączono z serwerem! ID: ${socket.id}`);
 });
@@ -52,7 +49,6 @@ socket.on("disconnect", (reason) => {
     logDoKonsoli(`<span style="color:yellow;">Rozłączono: ${reason}</span>`);
 });
 
-// Obsługa przycisku logowania
 document.getElementById("btnZaloguj").addEventListener("click", () => {
     const nick = document.getElementById("inputLogin").value.trim();
     
@@ -75,7 +71,6 @@ document.getElementById("btnZaloguj").addEventListener("click", () => {
     }
 });
 
-// === NASŁUCHIWANIE ZDARZEŃ SIECIOWYCH ===
 socket.on("currentPlayers", (players) => {
     logDoKonsoli(`Otrzymano currentPlayers: ${Object.keys(players).length} graczy`);
     Object.keys(players).forEach((id) => {
@@ -105,7 +100,6 @@ socket.on("playerDisconnected", (id) => {
     delete inniGracze[id];
 });
 
-// === FUNKCJA WYSYŁAJĄCA RUCH ===
 function wyslijRuch() {
     if (typeof gracz !== 'undefined' && socket.connected) {
         socket.emit("playerMovement", { 
@@ -118,7 +112,6 @@ function wyslijRuch() {
     }
 }
 
-// === FUNKCJA RYSUJĄCA INNYCH GRACZY ===
 function rysujInnychGraczy(ctx) {
     Object.keys(inniGracze).forEach((id) => {
         const g = inniGracze[id];
@@ -127,13 +120,11 @@ function rysujInnychGraczy(ctx) {
         ctx.translate(g.x, g.y);
         ctx.scale(1.3, 1.3);
 
-        // Cień
         ctx.fillStyle = "rgba(0,0,0,0.35)";
         ctx.beginPath();
         ctx.ellipse(0, 50, 24, 8, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Ubiór drugiego gracza
         if (g.ubranyWNomex) {
             ctx.fillStyle = "#c8ab84";
             ctx.beginPath();
@@ -146,7 +137,6 @@ function rysujInnychGraczy(ctx) {
             ctx.fill();
         }
 
-        // Głowa
         ctx.fillStyle = "#d89b6b";
         ctx.beginPath();
         ctx.roundRect(-12, -48, 24, 22, 4);
@@ -154,7 +144,6 @@ function rysujInnychGraczy(ctx) {
 
         ctx.restore();
 
-        // Rysowanie nicku nad postacią
         ctx.fillStyle = "white";
         ctx.font = "12px sans-serif";
         ctx.textAlign = "center";
@@ -162,15 +151,12 @@ function rysujInnychGraczy(ctx) {
     });
 }
 
-// === GŁÓWNA PĘTLA GRY (ODŚWIEŻANIE EKRANU) ===
 let licznikRuchu = 0;
 
 function petlaGry() {
-    // 1. Czyszczenie ekranu
     ctx.fillStyle = "#0f172a";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 2. Aktualizacja i rysowanie Twojej postaci (z pliku gracz.js)
     if (typeof gracz !== 'undefined') {
         if (typeof gracz.aktualizuj === 'function') {
             gracz.aktualizuj();
@@ -180,10 +166,8 @@ function petlaGry() {
         }
     }
 
-    // 3. Rysowanie innych graczy
     rysujInnychGraczy(ctx);
 
-    // 4. Wysyłanie ruchu co kilka klatek
     licznikRuchu++;
     if (licznikRuchu % 3 === 0) {
         wyslijRuch();
@@ -192,5 +176,4 @@ function petlaGry() {
     requestAnimationFrame(petlaGry);
 }
 
-// Uruchomienie pętli
 requestAnimationFrame(petlaGry);
